@@ -765,46 +765,28 @@ for i in $(seq 1 255); do (ping -c 1 172.16.1.$i | grep "bytes from" | cut -d ' 
 ifconfig
 - gives that we ve an other net interface lets scan it
 for i in {1..255} ;do (ping -c 1 172.16.1.$i | grep "bytes from"|cut -d ' ' - f4|tr -d ':' &);done
-in order to perform a pivoting within the network lets upgrade to a ssh by adding our pubkey to /root/.ssh/authorized_keys
-ssh -i id_rsa -D 9050 root@10.10.110.100 <-- make sure to conf the proxychains.conf file
+in order to perform a pivoting within the network lets upgrade ligolo tunnel
 -> ligolo-ng
 ```
- ~  ssh -i id_rsa -D 9050 root@10.10.110.100
-Warning: Identity file id_rsa not accessible: No such file or directory.
-The authenticity of host '10.10.110.100 (10.10.110.100)' can't be established.
-ED25519 key fingerprint is: SHA256:Pj8NTFWehqCpZS0qnbXCKkHikSrFlHDgABvA2FE9Lu0
-This key is not known by any other names.
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added '10.10.110.100' (ED25519) to the list of known hosts.
-** WARNING: connection is not using a post-quantum key exchange algorithm.
-** This session may be vulnerable to "store now, decrypt later" attacks.
-** The server may need to be upgraded. See https://openssh.com/pq.html
-Welcome to Ubuntu 20.04 LTS (GNU/Linux 5.4.0-29-generic x86_64)
+ ~/ligolo-ng  nmap 172.16.1.10 -sT -sV -Pn -T5 
+Starting Nmap 7.98 ( https://nmap.org ) at 2026-10-03 16:06 +0100
+Warning: 172.16.1.10 giving up on port because retransmission cap hit (2).
+Nmap scan report for 172.16.1.10
+Host is up (0.064s latency).
+Not shown: 954 closed tcp ports (conn-refused), 42 filtered tcp ports (no-response)
+PORT    STATE SERVICE     VERSION
+22/tcp  open  ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+80/tcp  open  http        Apache httpd 2.4.41 ((Ubuntu))
+139/tcp open  netbios-ssn Samba smbd 4
+445/tcp open  netbios-ssn Samba smbd 4
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/advantage
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 28.91 seconds
 
- * Super-optimized for small spaces - read how we shrank the memory
-   footprint of MicroK8s to make it the smallest full K8s around.
-
-   https://ubuntu.com/blog/microk8s-memory-optimisation
-
-636 updates can be installed immediately.
-398 of these updates are security updates.
-To see these additional updates run: apt list --upgradable
-
-
-The list of available updates is more than a week old.
-To check for new updates run: sudo apt update
-Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
-
-Your Hardware Enablement Stack (HWE) is supported until April 2025.
-Last login: Wed Oct 27 08:09:21 2021
-root@DANTE-WEB-NIX01:~#
 ```
 
-proxychains nmap 172.16.1.10 -sT -sV -Pn -T5 <-- lets scan the discoverd net
+ nmap 172.16.1.10 -sT -sV -Pn -T5 <-- lets scan the discoverd net
 we discovered an http running lets connect
 proxychains firefox
 navigate a round the page and test the diff params we discover a path traversal vuln in the page param
